@@ -37,7 +37,7 @@ public class CLI {
         final Restaurant restaurant = tmpRes;
         final int[] tables_numbers = restaurant.getTables();
 
-        Waitress tamer = new Waitress("Tamer", restaurant) {
+        Waitress tamer = new Waitress("John", restaurant) {
             @Override
             public void onUDPNotification(InetAddress address, NetworkNotification notification) {
 //                System.out.println("UDP : " + notification);
