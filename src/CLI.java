@@ -16,14 +16,18 @@ import java.util.Scanner;
 public class CLI {
 
     public static void main(String[] args){
-        Constants.LOG_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/l1";
-
+        /**
+         * Set up Menu
+         * **/
         Menu menu = new Menu();
         int p1 = menu.addProduct(new Product("p1", "p1 is good", null));
         int p2 = menu.addProduct(new Product("p2", "p2 is bad", null));
         int p3 = menu.addProduct(new Product("p3", "p2 is aah", null));
         int p4 = menu.addProduct(new Product("p4", "p2 is yummy", null));
 
+        /**
+         * Set up Restaurant, check if there is cached version in memory
+         * **/
         Restaurant lastState;
         try{
             lastState = (Restaurant)FileManager.readObject(Constants.RESTAURANT_STATE_FILE);
@@ -43,30 +47,36 @@ public class CLI {
         final Restaurant restaurant = lastState;
 
 
+        /**
+         * Set up Order History, check if there is cached version in memory
+         * **/
         OrderHistory orderHistory = (OrderHistory) FileManager.readObject(Constants.ORDER_HISTORY_FILE);
         if(orderHistory == null){
             orderHistory = new OrderHistory();
         }
         restaurant.setOrderHistory(orderHistory);
 
+        /**
+         * Set up Waitress Listeners
+         * **/
         Waitress John = new Waitress("John", restaurant) {
             @Override
-            public void onUDPNotification(InetAddress address, NetworkNotification notification) {
-                System.out.println("UDP " + notification);
-            }
-
+            public void onUDPNotification(InetAddress address, NetworkNotification notification) {}
             @Override
-            public void onTCPNotification(ConnectionHandler handler, NetworkNotification notification) {
-                System.out.println("TCP : " + notification.toString());
-            }
+            public void onTCPNotification(ConnectionHandler handler, NetworkNotification notification) {}
         };
 
+        /**
+         * Turn off networking
+         * For using the networking you should set up LAN settings to multicast on
+         * Constants.UDP_MULTICAST_HOST on port Constants.UDP_PORT
+         * **/
         turnOnNetworking(John, false);
 
+
+        /** Start Command Line Interface **/
         Utils.writeToLog(John.getName() + " Started OrderTaker");
-
         Scanner scanner = new Scanner(System.in);
-
         while (true){
             System.out.println("1 - Open Table");
             System.out.println("2 - Order Item");
