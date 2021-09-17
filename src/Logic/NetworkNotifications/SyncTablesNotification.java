@@ -24,7 +24,7 @@ public class SyncTablesNotification extends NetworkNotification{
      * update the tables that have higher version than what is defined
      * * **/
     @Override
-    public void visitTCP(ConnectionHandler handler, Waitress waitress) {
+    public synchronized void visitTCP(ConnectionHandler handler, Waitress waitress) {
         for(Table networkTable : this.tables){
             Table localTable = waitress.getRestaurant().getTable(networkTable.getNumber());
 
@@ -33,6 +33,7 @@ public class SyncTablesNotification extends NetworkNotification{
                     OrderItem networkOrderItem = networkTable.getCurrentOrder().getOrderItems().get(io);
                     if(!localTable.containsOrder(networkOrderItem.getWaiterName(), networkOrderItem.getTimestamp())){
                         localTable.getCurrentOrder().addItem(networkOrderItem.getWaiterName(), networkOrderItem.getTimestamp(), networkOrderItem.getProduct(), networkOrderItem.getQuantity(), networkOrderItem.getNotes(), networkOrderItem.isDistributed());
+                        System.out.println("Adding " + networkOrderItem.getProduct());
                     }else{
                         // update current item
                         OrderItem localOrderItem = localTable.getOrderItem(networkOrderItem.getWaiterName(), networkOrderItem.getTimestamp());
@@ -48,7 +49,11 @@ public class SyncTablesNotification extends NetworkNotification{
             }
 
         }
+        waitress.doneSyncing();
     }
 
-
+    @Override
+    public String toString() {
+        return "SyncTablesNotification for tables";
+    }
 }

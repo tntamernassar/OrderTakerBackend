@@ -32,6 +32,7 @@ public abstract class ConnectionHandler extends Thread{
             socket.getOutputStream().write(data);
             return true;
         }catch (Exception e){
+            Utils.writeToLog(e.getMessage());
             return false;
         }
     }
@@ -53,10 +54,11 @@ public abstract class ConnectionHandler extends Thread{
             }catch (EOFException eofException){
                 this.running = false;
             }catch (Exception e){
-                System.out.println("Can't read from client ");
                 try{
                     socket = new Socket(socket.getInetAddress(), socket.getPort());
                 }catch (Exception ex){
+                    ex.printStackTrace();
+                    this.running = false;
                     continue;
                 }
                 Utils.writeToLog("Can't read from client " + e.getMessage());

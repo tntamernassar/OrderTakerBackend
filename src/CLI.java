@@ -1,5 +1,6 @@
 import Logic.*;
 import Logic.NetworkNotifications.NetworkNotification;
+import Logic.NetworkNotifications.SyncMe;
 import Services.Constants;
 import Services.Network.ConnectionHandler;
 import Services.Network.NetworkAdapter;
@@ -37,28 +38,29 @@ public class CLI {
         final Restaurant restaurant = tmpRes;
         final int[] tables_numbers = restaurant.getTables();
 
-        Waitress tamer = new Waitress("John", restaurant) {
+        Waitress John = new Waitress("John", restaurant) {
             @Override
             public void onUDPNotification(InetAddress address, NetworkNotification notification) {
-//                System.out.println("UDP : " + notification);
+                Utils.writeToLog("[UDP] " + notification.toString());
             }
 
             @Override
             public void onTCPNotification(ConnectionHandler handler, NetworkNotification notification) {
-//                System.out.println("TCP : " + notification);
+//                System.out.println("TCP : " + notification.toString());
             }
         };
         // Set network adapter
         NetworkAdapter.init(new NetworkAdapter() {
             @Override
             public void onConnectionEstablished(ConnectionHandler connectionHandler) {
+
             }
         });
         NetworkAdapter.getInstance().start();
-        tamer.setNetworkAdapter(NetworkAdapter.getInstance());
-        NetworkAdapter.getInstance().register(tamer);
+        John.setNetworkAdapter(NetworkAdapter.getInstance());
+        NetworkAdapter.getInstance().register(John);
 
-        NetworkDemon demon = new NetworkDemon(tamer);
+        NetworkDemon demon = new NetworkDemon(John);
         demon.start();
 
 
@@ -84,7 +86,7 @@ public class CLI {
             if(choice.equals("1")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
-                tamer.openTable(Integer.parseInt(choice));
+                John.openTable(Integer.parseInt(choice));
                 System.out.println("Successfully opened table " + choice);
             }else if(choice.equals("2")){
                 System.out.print("Table Number : ");
@@ -100,7 +102,7 @@ public class CLI {
                 choice = scanner.next();
                 String notes = choice;
 
-                tamer.orderItem(table, p, q, notes);
+                John.orderItem(table, p, q, notes);
                 System.out.println("Successfully ordered " + p.getName() );
             }else if(choice.equals("3")){
                 System.out.print("Table Number : ");
@@ -110,13 +112,13 @@ public class CLI {
                 choice = scanner.next();
                 int itemNumber = Integer.parseInt(choice);
 
-                tamer.removeItem(table, itemNumber);
+                John.removeItem(table, itemNumber);
                 System.out.println("Item Removed Successfully !");
             }else if(choice.equals("4")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
                 int table = Integer.parseInt(choice);
-                tamer.submitOrder(table);
+                John.submitOrder(table);
                 System.out.println("Submitted Order Successfully !");
             }else if(choice.equals("5")){
                 System.out.print("Table Number : ");
@@ -135,28 +137,28 @@ public class CLI {
                 choice = scanner.next();
                 String notes = choice;
 
-                tamer.editOrder(table, itemNumber, p, q, notes);
+                John.editOrder(table, itemNumber, p, q, notes);
                 System.out.println("Edited successfully");
             }else if(choice.equals("6")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
                 int table = Integer.parseInt(choice);
-                tamer.closeOrder(table);
+                John.closeOrder(table);
                 System.out.println("Successfully closed table " + table);
             }else if(choice.equals("7")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
                 int table = Integer.parseInt(choice);
-                tamer.cancelOrder(table);
+                John.cancelOrder(table);
                 System.out.println("Successfully canceled table " + table);
             }else if(choice.equals("8")){
                 System.out.println(Utils.MapToString(menu.getProducts()));
             }else if(choice.equals("9")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
-                System.out.println(tamer.getRestaurant().getTable(Integer.parseInt(choice)));
+                System.out.println(John.getRestaurant().getTable(Integer.parseInt(choice)));
             }else if(choice.equals("10")){
-                System.out.println(tamer.getRestaurant().getOrderHistory());
+                System.out.println(John.getRestaurant().getOrderHistory());
             }else if(choice.equals("90")){
                 System.exit(0);
             }else {

@@ -61,7 +61,7 @@ public class Constants {
     /**
      * Demon Delay Time.
      * **/
-    public static final int DEMON_DELAY = 10 * 1000;
+    public static final int DEMON_DELAY = 5 * 1000;
 
     /**
      * Reconnection Delay.

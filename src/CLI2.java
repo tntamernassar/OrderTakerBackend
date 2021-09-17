@@ -1,4 +1,5 @@
 import Logic.NetworkNotifications.NetworkNotification;
+import Logic.NetworkNotifications.SyncMe;
 import Logic.Product;
 import Logic.Restaurant;
 import Logic.Table;
@@ -35,10 +36,9 @@ public class CLI2 {
         }
 
         final Restaurant restaurant = tmpRes;
-
         final int[] tables_numbers = restaurant.getTables();
 
-        Waitress tamer = new Waitress("Brody", restaurant) {
+        Waitress Brody = new Waitress("Brody", restaurant) {
             @Override
             public void onUDPNotification(InetAddress address, NetworkNotification notification) {
 //                System.out.println("UDP : " + notification);
@@ -46,11 +46,11 @@ public class CLI2 {
 
             @Override
             public void onTCPNotification(ConnectionHandler handler, NetworkNotification notification) {
-//                System.out.println("TCP : " + notification);
+//                System.out.println("TCP : " + notification.toString());
             }
         };
 
-        Constants.TCP_PORT = 3000;              // for testing
+        Constants.TCP_PORT = 3000; // for testing on the same host
         NetworkAdapter.init(new NetworkAdapter() {
             @Override
             public void onConnectionEstablished(ConnectionHandler connectionHandler) {
@@ -58,10 +58,10 @@ public class CLI2 {
             }
         });
         NetworkAdapter.getInstance().start();
-        tamer.setNetworkAdapter(NetworkAdapter.getInstance());
-        NetworkAdapter.getInstance().register(tamer);
+        Brody.setNetworkAdapter(NetworkAdapter.getInstance());
+        NetworkAdapter.getInstance().register(Brody);
 
-        NetworkDemon demon = new NetworkDemon(tamer);
+        NetworkDemon demon = new NetworkDemon(Brody);
         demon.start();
 
 
@@ -87,7 +87,7 @@ public class CLI2 {
             if(choice.equals("1")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
-                tamer.openTable(Integer.parseInt(choice));
+                Brody.openTable(Integer.parseInt(choice));
                 System.out.println("Successfully opened table " + choice);
             }else if(choice.equals("2")){
                 System.out.print("Table Number : ");
@@ -103,7 +103,7 @@ public class CLI2 {
                 choice = scanner.next();
                 String notes = choice;
 
-                tamer.orderItem(table, p, q, notes);
+                Brody.orderItem(table, p, q, notes);
                 System.out.println("Successfully ordered " + p.getName() );
             }else if(choice.equals("3")){
                 System.out.print("Table Number : ");
@@ -113,13 +113,13 @@ public class CLI2 {
                 choice = scanner.next();
                 int itemNumber = Integer.parseInt(choice);
 
-                tamer.removeItem(table, itemNumber);
+                Brody.removeItem(table, itemNumber);
                 System.out.println("Item Removed Successfully !");
             }else if(choice.equals("4")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
                 int table = Integer.parseInt(choice);
-                tamer.submitOrder(table);
+                Brody.submitOrder(table);
                 System.out.println("Submitted Order Successfully !");
             }else if(choice.equals("5")){
                 System.out.print("Table Number : ");
@@ -138,28 +138,28 @@ public class CLI2 {
                 choice = scanner.next();
                 String notes = choice;
 
-                tamer.editOrder(table, itemNumber, p, q, notes);
+                Brody.editOrder(table, itemNumber, p, q, notes);
                 System.out.println("Edited successfully");
             }else if(choice.equals("6")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
                 int table = Integer.parseInt(choice);
-                tamer.closeOrder(table);
+                Brody.closeOrder(table);
                 System.out.println("Successfully closed table " + table);
             }else if(choice.equals("7")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
                 int table = Integer.parseInt(choice);
-                tamer.cancelOrder(table);
+                Brody.cancelOrder(table);
                 System.out.println("Successfully canceled table " + table);
             }else if(choice.equals("8")){
                 System.out.println(Utils.MapToString(menu.getProducts()));
             }else if(choice.equals("9")){
                 System.out.print("Table Number : ");
                 choice = scanner.next();
-                System.out.println(tamer.getRestaurant().getTable(Integer.parseInt(choice)));
+                System.out.println(Brody.getRestaurant().getTable(Integer.parseInt(choice)));
             }else if(choice.equals("10")){
-                System.out.println(tamer.getRestaurant().getOrderHistory());
+                System.out.println(Brody.getRestaurant().getOrderHistory());
             }else if(choice.equals("90")){
                 System.exit(0);
             }else {

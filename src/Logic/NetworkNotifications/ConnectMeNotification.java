@@ -39,4 +39,9 @@ public class ConnectMeNotification extends NetworkNotification{
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return getSenderName() + " : ConnectMe on port " + this.port;
+    }
 }

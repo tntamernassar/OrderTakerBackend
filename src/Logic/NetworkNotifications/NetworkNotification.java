@@ -29,7 +29,13 @@ public class NetworkNotification implements Serializable {
 
     public void visitTCP(ConnectionHandler handler, Waitress waitress){}
 
-    public void print() {
-        System.out.println(this.toString());
+
+    public boolean ignore(){
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "NetworkNotification From " + SenderName;
     }
 }

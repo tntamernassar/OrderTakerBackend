@@ -32,15 +32,32 @@ public abstract class NetworkAdapter{
         this.connections = new CopyOnWriteArrayList<>();
     }
 
+    public synchronized void cleanConnections(){
+        CopyOnWriteArrayList<ConnectionHandler> connectionHandlers = new CopyOnWriteArrayList<>();
+        for(ConnectionHandler connectionHandler: this.connections){
+            if (connectionHandler.isAlive()){
+                connectionHandlers.add(connectionHandler);
+            }
+        }
+
+        this.connections = connectionHandlers;
+    }
+
     public abstract void onConnectionEstablished(ConnectionHandler connectionHandler);
 
     public void start(){
         this.tcpHandler = new TCPHandler(Constants.TCP_PORT) {
+            /**
+             * Logically, this triggers whenever other tablet want to connect for notifying
+             * so there is no need to hold the connection handler in the connections list
+             * since a connectionHandler for this should have been stored in the connections list while responding
+             * to ConnectMe notification from the same client
+             * **/
             @Override
             public void onConnectionRequest(Socket socket) {
                 ConnectionHandler connectionHandler = makeConnection(socket);
                 if(connectionHandler != null){
-                    connections.add(connectionHandler);
+//                    connections.add(connectionHandler);
                     onConnectionEstablished(connectionHandler);
                 }
             }
@@ -49,7 +66,9 @@ public abstract class NetworkAdapter{
         this.udpHandler = new UDPHandler(Constants.UDP_MULTICAST_HOST, Constants.UDP_PORT) {
             @Override
             public void onNotification(InetAddress address, NetworkNotification notification) {
-                notifyUDPObservers(address, notification);
+                if(! notification.ignore()){
+                    notifyUDPObservers(address, notification);
+                }
             }
         };
 
@@ -62,14 +81,21 @@ public abstract class NetworkAdapter{
     }
 
     public synchronized boolean sendTCPToAll(NetworkNotification notification){
-        boolean success = true;
-        for (ConnectionHandler connectionHandler: this.connections){
-            success &= connectionHandler.send(notification);
-            if(!success){
-                Utils.writeToLog("Can't send to " + connectionHandler.socket.getInetAddress().getHostAddress());
+        if(connections.size() > 0) {
+            Utils.writeToLog("Sending TCP message to " + this.connections.size() + " Connection");
+            boolean success = true;
+            for (ConnectionHandler connectionHandler : this.connections) {
+                if (connectionHandler.isAlive()) {
+                    success &= connectionHandler.send(notification);
+                    if (!success) {
+                        Utils.writeToLog("Can't send to " + connectionHandler.socket.getInetAddress().getHostAddress());
+                    }
+                }
             }
+            return success;
+        }else{
+            return false;
         }
-        return success;
     }
 
     public boolean multicast(NetworkNotification notification){
@@ -80,14 +106,16 @@ public abstract class NetworkAdapter{
         ConnectionHandler handler = new ConnectionHandler(socket) {
             @Override
             public void onNotification(NetworkNotification notification) {
-                notifyTCPObservers(this, notification);
+                if(!notification.ignore()) {
+                    notifyTCPObservers(this, notification);
+                }
             }
         };
         handler.start();
         return handler;
     }
 
-    public ConnectionHandler connect(InetAddress address, int port){
+    public synchronized ConnectionHandler connect(InetAddress address, int port){
         Socket socket = this.tcpHandler.connect(address, port);
         if(socket != null){
             ConnectionHandler connectionHandler = makeConnection(socket);

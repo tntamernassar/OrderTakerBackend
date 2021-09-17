@@ -25,25 +25,40 @@ public class NetworkDemon extends Thread{
     }
 
     /**
-     * send connect me request
+     * Delete all closed connections
+     * Send connect me request
+     * Sync with others if still in syncing mode
      * Sync Changed Tables
      * **/
     @Override
     public void run() {
         Utils.writeToLog("Running Demon");
         while (true){
-            try{
+            try {
+                /** Delete all closed connections **/
+                waitress.getNetworkAdapter().cleanConnections();
+
+                /** Send connect me request **/
                 waitress.getNetworkAdapter().multicast(new ConnectMeNotification(waitress.getName(), Constants.TCP_PORT));
+
+                /** Sync with others if still in syncing mode **/
+                if(waitress.isSyncing()){
+                    Utils.writeToLog("Syncing with others ....");
+                    waitress.getNetworkAdapter().sendTCPToAll(new SyncMe(waitress.getName()));
+                }
+
+                /** Sync Changed Tables **/
                 LinkedList<Table> tables = new LinkedList<>();
-                for(Integer i : waitress.getChangedTables()){
+                for (Integer i : waitress.getChangedTables()) {
                     tables.add(waitress.getRestaurant().getTable(i));
                 }
-                if(tables.size() > 0){
-                    waitress.getNetworkAdapter().sendTCPToAll(new SyncTablesNotification(waitress.getName(), tables));
-                    waitress.setChangedTables(new LinkedList<>());
-                }else{
-
+                if (tables.size() > 0) {
+                    boolean success = waitress.getNetworkAdapter().sendTCPToAll(new SyncTablesNotification(waitress.getName(), tables));
+                    if(success){
+                        waitress.setChangedTables(new LinkedList<>());
+                    }
                 }
+
             }catch (Exception e){
                 e.printStackTrace();
                 Utils.writeToLog("[ERROR] in Demon.run " + e.getMessage());
