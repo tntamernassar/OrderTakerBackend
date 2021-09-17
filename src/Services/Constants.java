@@ -16,7 +16,7 @@ public class Constants {
     /**
      * UDP port
      * **/
-    public static final int UDP_PORT = 4446;
+    public static final int UDP_PORT = 2000;
 
     /**
      * UDP repeating time,
@@ -50,6 +50,12 @@ public class Constants {
      * The Order History File holds all the orders from all the devices
      * **/
     public static String ORDER_HISTORY_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/orders";
+
+    /**
+     * Restaurant State File,
+     * Hold last Restaurant state
+     * **/
+    public static String RESTAURANT_STATE_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/restaurant";
 
 
     /**

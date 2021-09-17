@@ -24,12 +24,24 @@ public class CLI {
         int p3 = menu.addProduct(new Product("p3", "p2 is aah", null));
         int p4 = menu.addProduct(new Product("p4", "p2 is yummy", null));
 
+        Restaurant lastState;
+        try{
+            lastState = (Restaurant)FileManager.readObject(Constants.RESTAURANT_STATE_FILE);
+            if(lastState == null){
+                lastState = new Restaurant();
+                lastState.addTable(new Table(1));
+                lastState.addTable(new Table(2));
+                lastState.addTable(new Table(3));
+            }
+        }catch (Exception e){
+            lastState = new Restaurant();
+            lastState.addTable(new Table(1));
+            lastState.addTable(new Table(2));
+            lastState.addTable(new Table(3));
+        }
 
+        final Restaurant restaurant = lastState;
 
-        final Restaurant restaurant = new Restaurant();
-        restaurant.addTable(new Table(1));
-        restaurant.addTable(new Table(2));
-        restaurant.addTable(new Table(3));
 
         OrderHistory orderHistory = (OrderHistory) FileManager.readObject(Constants.ORDER_HISTORY_FILE);
         if(orderHistory == null){
@@ -39,25 +51,17 @@ public class CLI {
 
         Waitress John = new Waitress("John", restaurant) {
             @Override
-            public void onUDPNotification(InetAddress address, NetworkNotification notification) {}
+            public void onUDPNotification(InetAddress address, NetworkNotification notification) {
+                System.out.println("UDP " + notification);
+            }
 
             @Override
             public void onTCPNotification(ConnectionHandler handler, NetworkNotification notification) {
                 System.out.println("TCP : " + notification.toString());
             }
         };
-        // Set network adapter
-        NetworkAdapter.init(new NetworkAdapter() {
-            @Override
-            public void onConnectionEstablished(ConnectionHandler connectionHandler) {}
-        });
-        NetworkAdapter.getInstance().start();
-        John.setNetworkAdapter(NetworkAdapter.getInstance());
-        NetworkAdapter.getInstance().register(John);
 
-        NetworkDemon demon = new NetworkDemon(John);
-        demon.start();
-
+        turnOnNetworking(John, false);
 
         Utils.writeToLog(John.getName() + " Started OrderTaker");
 
@@ -162,6 +166,22 @@ public class CLI {
         }
 
 
+    }
+
+    public static void turnOnNetworking(Waitress waitress, boolean on){
+        if(on) {
+            NetworkAdapter.init(new NetworkAdapter() {
+                @Override
+                public void onConnectionEstablished(ConnectionHandler connectionHandler) {
+                }
+            });
+            NetworkAdapter.getInstance().start();
+            waitress.setNetworkAdapter(NetworkAdapter.getInstance());
+            NetworkAdapter.getInstance().register(waitress);
+
+            NetworkDemon demon = new NetworkDemon(waitress);
+            demon.start();
+        }
     }
 
     /**

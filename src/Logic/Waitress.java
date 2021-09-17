@@ -2,6 +2,7 @@ package Logic;
 
 import Logic.NetworkNotifications.NetworkNotification;
 import Services.Constants;
+import Services.FileManager;
 import Services.Network.ConnectionHandler;
 import Services.Network.NetworkAdapter;
 import Services.Network.NetworkObserver;
@@ -73,6 +74,7 @@ public abstract class Waitress implements NetworkObserver {
     }
 
     private void tableChanged(int table){
+        FileManager.writeObject(this, Constants.RESTAURANT_STATE_FILE);
         if(!changedTables.contains(table)){
             changedTables.push(table);
         }
