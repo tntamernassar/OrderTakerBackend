@@ -77,6 +77,7 @@ public class OrderItem implements Serializable {
         return "OrderItem {" + "\n\t" +
                 "waiter = " + waiterName +"\n\t" +
                 "timestamp = " + timestamp +"\n\t" +
+                "distributed = " + isDistributed +"\n\t" +
                 "product = " + product +"\n\t" +
                 "quantity = " + quantity +"\n\t" +
                 "notes = " + notes  +"\n" +

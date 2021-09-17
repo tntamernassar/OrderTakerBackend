@@ -1,5 +1,6 @@
 package Services.Network;
 
+import Logic.NetworkNotifications.HealthCheck;
 import Logic.NetworkNotifications.NetworkNotification;
 import Services.Constants;
 import Services.Utils;
@@ -7,6 +8,7 @@ import Services.Utils;
 
 import java.net.*;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class NetworkAdapter{
@@ -25,22 +27,36 @@ public abstract class NetworkAdapter{
 
     LinkedList<NetworkObserver> observers;
 
-    CopyOnWriteArrayList<ConnectionHandler> connections;
+    ConcurrentHashMap<String, ConnectionHandler> connections;
+    CopyOnWriteArrayList<ConnectionHandler> readOnlyConnections;
 
     public NetworkAdapter(){
         this.observers = new LinkedList<>();
-        this.connections = new CopyOnWriteArrayList<>();
+        this.connections = new ConcurrentHashMap<>();
+        readOnlyConnections = new CopyOnWriteArrayList<>();
     }
 
     public synchronized void cleanConnections(){
-        CopyOnWriteArrayList<ConnectionHandler> connectionHandlers = new CopyOnWriteArrayList<>();
-        for(ConnectionHandler connectionHandler: this.connections){
-            if (connectionHandler.isAlive()){
-                connectionHandlers.add(connectionHandler);
+        CopyOnWriteArrayList<ConnectionHandler> activeConnections = new CopyOnWriteArrayList<>();
+        for(ConnectionHandler connectionHandler: this.readOnlyConnections){
+            if(!connectionHandler.isRunning()){
+                connectionHandler.close();
+            }else{
+                activeConnections.add(connectionHandler);
             }
         }
+        this.readOnlyConnections = activeConnections;
 
-        this.connections = connectionHandlers;
+        for(String name: this.connections.keySet()){
+            ConnectionHandler connectionHandler = this.connections.get(name);
+            if (!connectionHandler.isRunning()){
+                connectionHandler.close();
+                this.connections.remove(name);
+            }else if(!connectionHandler.send(new HealthCheck())){
+                this.connections.remove(name);
+                connectionHandler.close();
+            }
+        }
     }
 
     public abstract void onConnectionEstablished(ConnectionHandler connectionHandler);
@@ -57,7 +73,7 @@ public abstract class NetworkAdapter{
             public void onConnectionRequest(Socket socket) {
                 ConnectionHandler connectionHandler = makeConnection(socket);
                 if(connectionHandler != null){
-//                    connections.add(connectionHandler);
+                    readOnlyConnections.add(connectionHandler);
                     onConnectionEstablished(connectionHandler);
                 }
             }
@@ -76,6 +92,10 @@ public abstract class NetworkAdapter{
         this.udpHandler.start();
     }
 
+    public ConcurrentHashMap<String, ConnectionHandler> getConnections() {
+        return connections;
+    }
+
     public boolean sendUDP(InetAddress address, NetworkNotification notification){
         return this.udpHandler.send(address, notification);
     }
@@ -84,11 +104,14 @@ public abstract class NetworkAdapter{
         if(connections.size() > 0) {
             Utils.writeToLog("Sending TCP message to " + this.connections.size() + " Connection");
             boolean success = true;
-            for (ConnectionHandler connectionHandler : this.connections) {
-                if (connectionHandler.isAlive()) {
+            for (String name : this.connections.keySet()) {
+                ConnectionHandler connectionHandler = this.connections.get(name);
+                if (connectionHandler.isRunning()) {
                     success &= connectionHandler.send(notification);
                     if (!success) {
                         Utils.writeToLog("Can't send to " + connectionHandler.socket.getInetAddress().getHostAddress());
+                        this.connections.remove(name);
+                        connectionHandler.close();
                     }
                 }
             }
@@ -115,11 +138,11 @@ public abstract class NetworkAdapter{
         return handler;
     }
 
-    public synchronized ConnectionHandler connect(InetAddress address, int port){
+    public synchronized ConnectionHandler connect(String name, InetAddress address, int port){
         Socket socket = this.tcpHandler.connect(address, port);
         if(socket != null){
             ConnectionHandler connectionHandler = makeConnection(socket);
-            connections.add(connectionHandler);
+            connections.put(name, connectionHandler);
             return connectionHandler;
         }else {
             return null;

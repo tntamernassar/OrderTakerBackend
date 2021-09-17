@@ -33,13 +33,6 @@ public class Utils {
         );
     }
 
-    public static boolean writeConfig(Object object){
-        return FileManager.writeObject(object, Constants.CONFIG_DIR);
-    }
-
-    public static Object readRestaurant(){
-        return FileManager.readObject(Constants.CONFIG_DIR);
-    }
 
     public synchronized static boolean writeToLog(String logEvent){
         try {

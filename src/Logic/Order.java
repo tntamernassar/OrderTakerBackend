@@ -12,11 +12,14 @@ public class Order implements Serializable {
 
     private AtomicInteger itemsCounter;
     private LocalDateTime startedAt;
+    private String startedBy;
     private boolean distributed;
     private Order distributeVersion;
     private HashMap<Integer, OrderItem> orderItems;
 
-    public Order(){
+
+    public Order(String startedBy){
+        this.startedBy = startedBy;
         this.itemsCounter = new AtomicInteger(0);
         this.distributed = false;
         this.distributeVersion = null;
@@ -29,7 +32,6 @@ public class Order implements Serializable {
             orderItem.setDistributed(true);
         }
     }
-
 
     public boolean isDistributed() {
         return distributed;
@@ -49,6 +51,10 @@ public class Order implements Serializable {
 
     public LocalDateTime getStartedAt() {
         return startedAt;
+    }
+
+    public String getStartedBy() {
+        return startedBy;
     }
 
     public HashMap<Integer, OrderItem> getOrderItems() {
@@ -80,7 +86,7 @@ public class Order implements Serializable {
     }
 
     public Order clone() {
-        Order o = new Order();
+        Order o = new Order(getStartedBy());
         for(Integer oi: this.orderItems.keySet()){
             OrderItem orderItem = this.orderItems.get(oi);
             o.orderItems.put(oi, new OrderItem(orderItem.getWaiterName(), orderItem.getProduct(), orderItem.getQuantity(), orderItem.getNotes()));

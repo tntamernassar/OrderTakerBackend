@@ -66,8 +66,8 @@ public class Table implements Serializable {
         return closedAt;
     }
 
-    public Order startOrder(){
-        return this.startOrder(new Order());
+    public Order startOrder(String startedBy){
+        return this.startOrder(new Order(startedBy));
     }
 
     public Order startOrder(Order order){

@@ -37,25 +37,19 @@ public class Constants {
      * The Time Syncing process is on.
      * While syncing, the device only receive syncing responses but don't respond on requests
      * **/
-    public static final int WAITRESS_MAGIC = 10000;
+    public static final int SYNCING_TIME = 30 * 1000;
 
-    /**
-     * The Time Syncing process is on.
-     * While syncing, the device only receive syncing responses but don't respond on requests
-     * **/
-    public static final int SYNCING_TIME = 10 * 1000;
-
-
-    /**
-     * Configuration file,
-     * The Configuration file hold object files for the latest version of the restaurant workflow
-     * **/
-    public static String CONFIG_DIR = "/home/tamer/IdeaProjects/OrderTakerBackend/files/restaurant";
 
     /**
      * Log file.
      * **/
     public static String LOG_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/log.txt";
+
+    /**
+     * Order History File,
+     * The Order History File holds all the orders from all the devices
+     * **/
+    public static String ORDER_HISTORY_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/orders";
 
 
     /**
@@ -63,9 +57,5 @@ public class Constants {
      * **/
     public static final int DEMON_DELAY = 5 * 1000;
 
-    /**
-     * Reconnection Delay.
-     * **/
-    public static final int RECONNECTION_DELAY = 15 * 1000;
 
 }

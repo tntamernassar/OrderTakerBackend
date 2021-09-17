@@ -2,15 +2,15 @@ package Logic;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Restaurant implements Serializable {
+
     private HashMap<Integer, Table> tables;
-    private CopyOnWriteArrayList<Order> orderHistory;
+    private OrderHistory orderHistory;
 
     public Restaurant(){
         this.tables = new HashMap<>();
-        this.orderHistory = new CopyOnWriteArrayList<>();
+        this.orderHistory = new OrderHistory();
     }
 
     public int[] getTables() {
@@ -27,16 +27,16 @@ public class Restaurant implements Serializable {
     }
 
 
-
-    public CopyOnWriteArrayList<Order> getOrderHistory() {
+    public OrderHistory getOrderHistory() {
         return orderHistory;
+    }
+
+    public void setOrderHistory(OrderHistory orderHistory) {
+        this.orderHistory = orderHistory;
     }
 
     public void addTable(Table table) {
         this.tables.put(table.getNumber(), table);
     }
 
-    public void addOrderToHistory(Order order) {
-        this.orderHistory.add(order);
-    }
 }

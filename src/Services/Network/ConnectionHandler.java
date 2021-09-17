@@ -33,6 +33,7 @@ public abstract class ConnectionHandler extends Thread{
             return true;
         }catch (Exception e){
             Utils.writeToLog(e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -57,14 +58,21 @@ public abstract class ConnectionHandler extends Thread{
                 try{
                     socket = new Socket(socket.getInetAddress(), socket.getPort());
                 }catch (Exception ex){
-                    ex.printStackTrace();
+                    Utils.writeToLog("[ERROR] in ConnectionHandler.run " + ex.getMessage());
                     this.running = false;
                     continue;
                 }
                 Utils.writeToLog("Can't read from client " + e.getMessage());
-                e.printStackTrace();
             }
 
+        }
+    }
+
+    public boolean isRunning(){
+        try{
+            return this.running && socket.getInetAddress().isReachable(1);
+        }catch (Exception e){
+            return false;
         }
     }
 
@@ -74,6 +82,14 @@ public abstract class ConnectionHandler extends Thread{
         if (o == null || getClass() != o.getClass()) return false;
         ConnectionHandler that = (ConnectionHandler) o;
         return socket.getInetAddress().equals(that.socket.getInetAddress());
+    }
+
+    public void close(){
+        try{
+            this.socket.close();
+        }catch (Exception e){
+
+        }
     }
 
     @Override

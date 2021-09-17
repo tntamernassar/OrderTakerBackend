@@ -15,25 +15,26 @@ public class ConnectMeNotification extends NetworkNotification{
     }
 
     @Override
-    public void visitUDP(InetAddress address, Waitress waitress) {
+    public synchronized void visitUDP(InetAddress address, Waitress waitress) {
         if(!waitress.getName().equals(this.getSenderName())) {
-            if(waitress.getConnectedTo().containsKey(this.getSenderName())){
-                ConnectionHandler current = waitress.getConnectedTo().get(this.getSenderName());
+            if(waitress.getNetworkAdapter().getConnections().containsKey(this.getSenderName())){
+                ConnectionHandler current = waitress.getNetworkAdapter().getConnections().get(this.getSenderName());
                 if(!current.healthCheck()){
-                    ConnectionHandler connectionHandler = waitress.getNetworkAdapter().connect(address, this.port);
+                    current.close();
+                    ConnectionHandler connectionHandler = waitress.getNetworkAdapter().connect(getSenderName(), address, this.port);
                     if(connectionHandler == null){
                         Utils.writeToLog("[ERROR] in ConnectMe.visitTCP Can't Reconnect to " + address.getHostAddress());
                     }else{
-                        waitress.setConnection(this.getSenderName(), connectionHandler);
+                        waitress.getNetworkAdapter().getConnections().put(this.getSenderName(), connectionHandler);
                         Utils.writeToLog("Reconnecting to dead host " + address.getHostAddress());
                     }
                 }
             }else{
-                ConnectionHandler connectionHandler = waitress.getNetworkAdapter().connect(address, this.port);
+                ConnectionHandler connectionHandler = waitress.getNetworkAdapter().connect(getSenderName(), address, this.port);
                 if(connectionHandler == null){
                     Utils.writeToLog("[ERROR] in ConnectMe.visitTCP Can't connect to " + address.getHostAddress());
                 }else{
-                    waitress.setConnection(this.getSenderName(), connectionHandler);
+                    waitress.getNetworkAdapter().getConnections().put(this.getSenderName(), connectionHandler);
                     Utils.writeToLog("Connecting to host via ConnectMe " + address.getHostAddress());
                 }
             }

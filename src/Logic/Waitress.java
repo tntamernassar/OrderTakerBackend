@@ -10,7 +10,6 @@ import Services.OrderDistribution.OrderDistributor;
 import Services.Utils;
 
 import java.net.InetAddress;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 public abstract class Waitress implements NetworkObserver {
@@ -20,7 +19,6 @@ public abstract class Waitress implements NetworkObserver {
     private boolean isSyncing;
     private NetworkAdapter networkAdapter;
     private String name;
-    private HashMap<String, ConnectionHandler> connectedTo;
     private LinkedList<Integer> changedTables;
     /**
      *  Waitress class is responsible for the interaction
@@ -40,7 +38,6 @@ public abstract class Waitress implements NetworkObserver {
                 Constants.SYNCING_TIME
         );
         this.name = name;
-        this.connectedTo = new HashMap<>();
         this.changedTables = new LinkedList<>();
     }
 
@@ -48,13 +45,6 @@ public abstract class Waitress implements NetworkObserver {
         this.networkAdapter = networkAdapter;
     }
 
-    public HashMap<String, ConnectionHandler> getConnectedTo() {
-        return connectedTo;
-    }
-
-    public void setConnection(String name, ConnectionHandler handler){
-        this.connectedTo.put(name, handler);
-    }
 
     public String getName() {
         return name;
@@ -95,10 +85,9 @@ public abstract class Waitress implements NetworkObserver {
     public void openTable(int table){
         Table theTable = restaurant.getTable(table);
         if (!theTable.isActive()){
-            theTable.startOrder();
+            theTable.startOrder(getName());
             theTable.nextVersion();
             tableChanged(table);
-            Utils.writeConfig(this.getRestaurant());
             Utils.writeToLog("Opened Table " + table);
         }else {
             Utils.writeToLog("Tried to open Table " + table + " While it Was opened");
@@ -115,7 +104,7 @@ public abstract class Waitress implements NetworkObserver {
      * **/
     public int orderItem(int table, Product product, int quantity, String notes){
         if(!this.restaurant.getTable(table).isActive()){
-            this.restaurant.getTable(table).startOrder();
+            this.restaurant.getTable(table).startOrder(getName());
         }
         Utils.writeToLog("Table " + table + " Ordered Item : name : " + product.getName() + " quantity : " + quantity + " notes : " + notes);
         return this.restaurant.getTable(table).getCurrentOrder().addItem(this.getName(), product, quantity, notes);
@@ -164,25 +153,28 @@ public abstract class Waitress implements NetworkObserver {
         if(restaurant.getTable(table).isActive()){
             Table theTable = restaurant.getTable(table);
             Order currentOrder = theTable.getCurrentOrder();
-            theTable.nextVersion();
-            if(currentOrder.isDistributed()){
-                // the order already distributed
-                Order distributedVersion = currentOrder.getDistributeVersion();
-                OrderDistributor.distributeEdit(distributedVersion, new OrderDistributionRequest(table, currentOrder));
-                currentOrder.setDistributeVersion(currentOrder.clone());
-                Utils.writeToLog("Table " + table + " ReSubmitted an order");
+            if(currentOrder.getOrderItems().size() > 0){
+                theTable.nextVersion();
+                if(currentOrder.isDistributed()){
+                    // the order already distributed
+                    Order distributedVersion = currentOrder.getDistributeVersion();
+                    OrderDistributor.distributeEdit(distributedVersion, new OrderDistributionRequest(table, currentOrder));
+                    currentOrder.setDistributeVersion(currentOrder.clone());
+                    Utils.writeToLog("Table " + table + " ReSubmitted an order");
+                }else{
+                    // this is the first order from this table
+                    OrderDistributor.distribute(new OrderDistributionRequest(table, currentOrder));
+                    currentOrder.setDistributed(true);
+                    currentOrder.setDistributeVersion(currentOrder.clone());
+                    Utils.writeToLog("Table " + table + " Submitted the order");
+                }
+                currentOrder.distributeItems();
+                tableChanged(table);
+                return currentOrder;
             }else{
-                // this is the first order from this table
-                OrderDistributor.distribute(new OrderDistributionRequest(table, currentOrder));
-                currentOrder.setDistributed(true);
-                currentOrder.setDistributeVersion(currentOrder.clone());
-                Utils.writeToLog("Table " + table + " Submitted the order");
-
+                Utils.writeToLog("Order contains no item");
+                return null;
             }
-            currentOrder.distributeItems();
-            tableChanged(table);
-            Utils.writeConfig(this.getRestaurant());
-            return currentOrder;
         }else{
             Utils.writeToLog("Table " + table + " Tried to submit a closed table !");
             return null;
@@ -203,11 +195,15 @@ public abstract class Waitress implements NetworkObserver {
     public Order closeOrder(int table){
         Table theTable = restaurant.getTable(table);
         if(theTable.isActive()){
+            if(theTable.getCurrentOrder().getOrderItems().size() > 0){
+                boolean added = this.restaurant.getOrderHistory().addToHistory(table, theTable.getCurrentOrder());
+                if(added) {
+                    this.restaurant.getOrderHistory().write();
+                }
+            }
             Order closedOrder = theTable.closeOrder();
-            this.restaurant.addOrderToHistory(closedOrder);
             theTable.nextVersion();
             tableChanged(table);
-            Utils.writeConfig(this.getRestaurant());
             Utils.writeToLog("Table " + table + " Closed the order");
             return closedOrder;
         }else{
@@ -232,7 +228,6 @@ public abstract class Waitress implements NetworkObserver {
             Order closedOrder = theTable.closeOrder();
             theTable.nextVersion();
             tableChanged(table);
-            Utils.writeConfig(this.getRestaurant());
             Utils.writeToLog("Table " + table + " Canceled the order");
             return closedOrder;
         }else{

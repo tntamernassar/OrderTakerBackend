@@ -6,6 +6,7 @@ import Logic.Waitress;
 import Services.Constants;
 import Services.Utils;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 
 public class NetworkDemon extends Thread{
@@ -38,6 +39,8 @@ public class NetworkDemon extends Thread{
                 /** Delete all closed connections **/
                 waitress.getNetworkAdapter().cleanConnections();
 
+                System.out.println("Connections : " + waitress.getNetworkAdapter().getConnections().keySet());
+
                 /** Send connect me request **/
                 waitress.getNetworkAdapter().multicast(new ConnectMeNotification(waitress.getName(), Constants.TCP_PORT));
 
@@ -46,6 +49,7 @@ public class NetworkDemon extends Thread{
                     Utils.writeToLog("Syncing with others ....");
                     waitress.getNetworkAdapter().sendTCPToAll(new SyncMe(waitress.getName()));
                 }
+
 
                 /** Sync Changed Tables **/
                 LinkedList<Table> tables = new LinkedList<>();

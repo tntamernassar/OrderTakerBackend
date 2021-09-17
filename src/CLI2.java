@@ -1,10 +1,7 @@
+import Logic.*;
 import Logic.NetworkNotifications.NetworkNotification;
-import Logic.NetworkNotifications.SyncMe;
-import Logic.Product;
-import Logic.Restaurant;
-import Logic.Table;
-import Logic.Waitress;
 import Services.Constants;
+import Services.FileManager;
 import Services.Network.ConnectionHandler;
 import Services.Network.NetworkAdapter;
 import Services.Network.NetworkDemon;
@@ -16,46 +13,45 @@ import java.util.Scanner;
 public class CLI2 {
 
     public static void main(String[] args){
+        Constants.LOG_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/l2";
+
+
         Menu menu = new Menu();
         int p1 = menu.addProduct(new Product("p1", "p1 is good", null));
         int p2 = menu.addProduct(new Product("p2", "p2 is bad", null));
         int p3 = menu.addProduct(new Product("p3", "p2 is aah", null));
         int p4 = menu.addProduct(new Product("p4", "p2 is yummy", null));
 
-        Constants.CONFIG_DIR = "/home/tamer/IdeaProjects/OrderTakerBackend/files/r2";
-        Constants.LOG_FILE = "/home/tamer/IdeaProjects/OrderTakerBackend/files/l2";
 
-//        Restaurant tmpRes = (Restaurant) Utils.readRestaurant();
-        Restaurant tmpRes = null;
-        if(tmpRes == null){
-            tmpRes = new Restaurant();
-            tmpRes.addTable(new Table(1));
-            tmpRes.addTable(new Table(2));
-            tmpRes.addTable(new Table(3));
-            Utils.writeConfig(tmpRes);
+        final Restaurant restaurant = new Restaurant();
+        restaurant.addTable(new Table(1));
+        restaurant.addTable(new Table(2));
+        restaurant.addTable(new Table(3));
+
+        OrderHistory orderHistory = (OrderHistory) FileManager.readObject(Constants.ORDER_HISTORY_FILE);
+        if(orderHistory == null){
+            orderHistory = new OrderHistory();
         }
+        restaurant.setOrderHistory(orderHistory);
 
-        final Restaurant restaurant = tmpRes;
-        final int[] tables_numbers = restaurant.getTables();
 
         Waitress Brody = new Waitress("Brody", restaurant) {
             @Override
             public void onUDPNotification(InetAddress address, NetworkNotification notification) {
-//                System.out.println("UDP : " + notification);
+                System.out.println("UDP " + notification);
             }
 
             @Override
             public void onTCPNotification(ConnectionHandler handler, NetworkNotification notification) {
-//                System.out.println("TCP : " + notification.toString());
+                System.out.println("TCP " + notification);
+
             }
         };
 
         Constants.TCP_PORT = 3000; // for testing on the same host
         NetworkAdapter.init(new NetworkAdapter() {
             @Override
-            public void onConnectionEstablished(ConnectionHandler connectionHandler) {
-
-            }
+            public void onConnectionEstablished(ConnectionHandler connectionHandler) {}
         });
         NetworkAdapter.getInstance().start();
         Brody.setNetworkAdapter(NetworkAdapter.getInstance());
@@ -65,7 +61,7 @@ public class CLI2 {
         demon.start();
 
 
-        Utils.writeToLog("Started OrderTaker");
+        Utils.writeToLog(Brody.getName() + " Started OrderTaker");
 
         Scanner scanner = new Scanner(System.in);
 
