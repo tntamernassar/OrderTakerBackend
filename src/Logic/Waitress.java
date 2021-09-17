@@ -74,7 +74,7 @@ public abstract class Waitress implements NetworkObserver {
     }
 
     private void tableChanged(int table){
-        FileManager.writeObject(this, Constants.RESTAURANT_STATE_FILE);
+        FileManager.writeObject(this.getRestaurant(), Constants.RESTAURANT_STATE_FILE);
         if(!changedTables.contains(table)){
             changedTables.push(table);
         }
